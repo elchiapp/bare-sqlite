@@ -461,6 +461,20 @@ test('loadStaticExtension throws for missing or invalid extensions', (t) => {
   t.exception(() => db.loadStaticExtension(null), /INVALID_ARGUMENT/)
 })
 
+test('loadStaticExtension loads linked sqlite-vector when available', (t) => {
+  const names = DatabaseSync.staticExtensions()
+  if (!names.includes('vector')) {
+    t.pass('sqlite-vector is not linked in this build')
+    return
+  }
+
+  using db = new DatabaseSync(':memory:')
+  db.loadStaticExtension('vector')
+  const row = db.prepare('SELECT vector_version() AS version').get()
+  t.is(typeof row.version, 'string')
+  t.ok(row.version.length > 0)
+})
+
 test('loadStaticExtension loads the test extension when available', (t) => {
   const names = DatabaseSync.staticExtensions()
   if (!names.includes('bare_sqlite_test')) {

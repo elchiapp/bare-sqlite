@@ -7,6 +7,7 @@ find_package(cmake-npm REQUIRED PATHS node_modules/cmake-npm)
 
 project(bare_sqlite C)
 
+option(BARE_SQLITE_ENABLE_SQLITE_VECTOR "Build sqlite-vector as a static extension" ON)
 option(BARE_SQLITE_ENABLE_TEST_STATIC_EXTENSION "Build the test static extension" OFF)
 set(BARE_SQLITE_STATIC_EXTENSION_SOURCE "" CACHE FILEPATH "Source file that defines bare_sqlite_static_extensions")
 
@@ -45,6 +46,47 @@ set(bare_sqlite_static_extension_sources)
 if(BARE_SQLITE_ENABLE_TEST_STATIC_EXTENSION)
   list(APPEND bare_sqlite_static_extension_definitions BARE_SQLITE_ENABLE_TEST_STATIC_EXTENSION)
   list(APPEND bare_sqlite_static_extension_sources test/static-extension.c)
+endif()
+
+if(BARE_SQLITE_ENABLE_SQLITE_VECTOR)
+  fetch_package("https://github.com/sqliteai/sqlite-vector/archive/refs/tags/0.9.95.zip" SOURCE_DIR sqlite_vector)
+
+  add_library(sqlite_vector STATIC)
+
+  set_target_properties(
+    sqlite_vector
+    PROPERTIES
+      POSITION_INDEPENDENT_CODE ON
+  )
+
+  target_sources(
+    sqlite_vector
+    PRIVATE
+      ${sqlite_vector}/src/sqlite-vector.c
+      ${sqlite_vector}/src/distance-avx2.c
+      ${sqlite_vector}/src/distance-avx512.c
+      ${sqlite_vector}/src/distance-cpu.c
+      ${sqlite_vector}/src/distance-neon.c
+      ${sqlite_vector}/src/distance-rvv.c
+      ${sqlite_vector}/src/distance-sse2.c
+  )
+
+  target_include_directories(
+    sqlite_vector
+    PRIVATE
+      ${sqlite3}
+      ${sqlite_vector}/src
+      ${sqlite_vector}/libs
+  )
+
+  target_compile_definitions(
+    sqlite_vector
+    PRIVATE
+      SQLITE_CORE
+  )
+
+  list(APPEND bare_sqlite_static_extension_definitions BARE_SQLITE_ENABLE_SQLITE_VECTOR)
+  list(APPEND bare_sqlite_static_extension_libraries sqlite_vector)
 endif()
 
 function(configure_bare_sqlite_target target)
