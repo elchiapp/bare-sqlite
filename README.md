@@ -96,6 +96,10 @@ The SQL with bound parameter values substituted in, or `null` if SQLite couldn't
 
 Execute the statement and return all rows as an array of objects keyed by column name.
 
+#### `const rows = stmt.values(...params)`
+
+Execute the statement and return all rows as arrays in result-column order.
+
 #### `const row = stmt.get(...params)`
 
 Execute the statement and return the first row, or `undefined` if there are no rows.

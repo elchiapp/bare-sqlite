@@ -474,3 +474,26 @@ test('Uint8Array first argument is treated as positional, not named', (t) => {
   const row = db.prepare('SELECT b FROM t').get()
   t.alike(row.b, Buffer.from(blob))
 })
+
+test('values returns rows as arrays', (t) => {
+  using db = new DatabaseSync(':memory:')
+  db.exec(`
+    CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT);
+    INSERT INTO t (name) VALUES ('alice'), ('bob');
+  `)
+
+  const rows = db.prepare('SELECT id, name FROM t WHERE id >= ? ORDER BY id').values(1)
+  t.alike(rows, [
+    [1, 'alice'],
+    [2, 'bob']
+  ])
+})
+
+test('values wraps blob columns as buffers', (t) => {
+  using db = new DatabaseSync(':memory:')
+  const blob = new Uint8Array([0, 1, 2, 253, 254, 255])
+
+  const rows = db.prepare('SELECT ? AS b').values(blob)
+  t.ok(Buffer.isBuffer(rows[0][0]))
+  t.alike(rows[0][0], Buffer.from(blob))
+})
