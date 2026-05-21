@@ -475,6 +475,54 @@ test('loadStaticExtension loads linked sqlite-vector when available', (t) => {
   t.ok(row.version.length > 0)
 })
 
+test('sqlite-vector inserts and searches vectors when available', (t) => {
+  const names = DatabaseSync.staticExtensions()
+  if (!names.includes('vector')) {
+    t.pass('sqlite-vector is not linked in this build')
+    return
+  }
+
+  using db = new DatabaseSync(':memory:')
+  db.loadStaticExtension('vector')
+  db.exec(`
+    CREATE TABLE documents (
+      id TEXT PRIMARY KEY,
+      content TEXT NOT NULL,
+      embedding BLOB NOT NULL
+    )
+  `)
+  db.prepare(
+    "SELECT vector_init('documents', 'embedding', 'dimension=3,type=FLOAT32,distance=COSINE')"
+  ).get()
+
+  const insert = db.prepare(`
+    INSERT INTO documents (id, content, embedding)
+    VALUES (?, ?, vector_as_f32(?, 3))
+  `)
+  insert.run('apple', 'Apple orchards grow fruit.', '[1, 0, 0]')
+  insert.run('physics', 'Physics labs measure particles.', '[0, 1, 0]')
+
+  const search = db.prepare(`
+    SELECT d.id, d.content, v.distance
+    FROM vector_full_scan('documents', 'embedding', vector_as_f32(?, 3), ?) AS v
+    JOIN documents AS d ON d.rowid = v.rowid
+    ORDER BY v.distance
+    LIMIT ?
+  `)
+  const rows = search.all('[1, 0, 0]', 2, 2)
+  t.alike(
+    rows.map((row) => row.id),
+    ['apple', 'physics']
+  )
+  t.ok(rows[0].distance <= rows[1].distance)
+
+  db.prepare('DELETE FROM documents WHERE id = ?').run('apple')
+  t.alike(
+    search.all('[1, 0, 0]', 2, 2).map((row) => row.id),
+    ['physics']
+  )
+})
+
 test('loadStaticExtension loads the test extension when available', (t) => {
   const names = DatabaseSync.staticExtensions()
   if (!names.includes('bare_sqlite_test')) {
