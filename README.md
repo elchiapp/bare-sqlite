@@ -105,8 +105,10 @@ enable SQLite's dynamic extension loader or SQL `load_extension()` function.
 Static extensions must be compiled with `SQLITE_CORE` so their entry point can
 be called with a `NULL` SQLite API pointer.
 
-This fork builds `sqliteai/sqlite-vector` as the `vector` static extension by
-default. Disable it at compile time with `-DBARE_SQLITE_ENABLE_SQLITE_VECTOR=OFF`.
+Builds can provide a custom static extension registry with
+`-DBARE_SQLITE_STATIC_EXTENSION_SOURCE=/path/to/static-extensions.c`, or a CMake
+integration script with
+`-DBARE_SQLITE_STATIC_EXTENSION_CMAKE=/path/to/extensions.cmake`.
 
 #### `db.enableLoadExtension(allow)`
 
