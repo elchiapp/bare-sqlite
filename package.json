@@ -8,9 +8,11 @@
   },
   "files": [
     "index.js",
+    "bare-sqlite.h",
     "binding.c",
     "binding.js",
     "CMakeLists.txt",
+    "static-extensions.c",
     "lib",
     "prebuilds"
   ],

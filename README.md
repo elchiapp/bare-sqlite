@@ -92,6 +92,19 @@ of positional values. `mode` is one of:
 
 Load an SQLite extension from `path`. `entryPoint` is the C initialization function name; when omitted, SQLite derives it from the filename. Throws if `allowExtension` was not enabled at construction.
 
+#### `DatabaseSync.staticExtensions()`
+
+Return the names of statically linked SQLite extensions compiled into this
+`bare-sqlite` build.
+
+#### `db.loadStaticExtension(name)`
+
+Load a statically linked SQLite extension into the current database connection.
+Static extensions are selected from `DatabaseSync.staticExtensions()` and do not
+enable SQLite's dynamic extension loader or SQL `load_extension()` function.
+Static extensions must be compiled with `SQLITE_CORE` so their entry point can
+be called with a `NULL` SQLite API pointer.
+
 #### `db.enableLoadExtension(allow)`
 
 Toggle extension loading at runtime. Useful for enabling extension loading during setup and disabling it before running user-supplied SQL. Throws if `allowExtension` was not enabled at construction.

@@ -445,6 +445,34 @@ test('extension methods throw when the database is closed', (t) => {
   db.close()
   t.exception(() => db.loadExtension('/anything'), /DATABASE_NOT_OPEN/)
   t.exception(() => db.enableLoadExtension(true), /DATABASE_NOT_OPEN/)
+  t.exception(() => db.loadStaticExtension('anything'), /DATABASE_NOT_OPEN/)
+})
+
+test('staticExtensions returns linked extension names', (t) => {
+  const names = DatabaseSync.staticExtensions()
+  t.ok(Array.isArray(names))
+  t.ok(names.every((value) => typeof value === 'string'))
+})
+
+test('loadStaticExtension throws for missing or invalid extensions', (t) => {
+  using db = new DatabaseSync(':memory:')
+  t.exception(() => db.loadStaticExtension('missing'), /NOTFOUND/)
+  t.exception(() => db.loadStaticExtension(''), /INVALID_ARGUMENT/)
+  t.exception(() => db.loadStaticExtension(null), /INVALID_ARGUMENT/)
+})
+
+test('loadStaticExtension loads the test extension when available', (t) => {
+  const names = DatabaseSync.staticExtensions()
+  if (!names.includes('bare_sqlite_test')) {
+    t.pass('test static extension is not linked in this build')
+    return
+  }
+
+  using db = new DatabaseSync(':memory:')
+  db.loadStaticExtension('bare_sqlite_test')
+  t.alike(db.prepare('SELECT bare_sqlite_static_test() AS value').get(), {
+    value: 'static-ok'
+  })
 })
 
 test('file-backed database persists across reopens', async (t) => {

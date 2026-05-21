@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <bare.h>
+#include <bare-sqlite.h>
 #include <js.h>
 #include <sqlite3.h>
 #include <stdbool.h>
@@ -395,6 +396,98 @@ bare_sqlite_load_extension(js_env_t *env, js_callback_info_t *info) {
 
   free(path);
   if (entry != NULL) free(entry);
+
+  if (status != SQLITE_OK) {
+    err = bare_sqlite__throw_error(env, status, errmsg != NULL ? errmsg : sqlite3_errstr(status));
+    assert(err == 0);
+
+    if (errmsg != NULL) sqlite3_free(errmsg);
+  }
+
+  return NULL;
+}
+
+static const bare_sqlite_static_extension_t *
+bare_sqlite__find_static_extension(const char *name) {
+  size_t count = 0;
+  const bare_sqlite_static_extension_t *extensions = bare_sqlite_static_extensions(&count);
+
+  if (extensions == NULL) return NULL;
+
+  for (size_t i = 0; i < count; i++) {
+    if (extensions[i].name != NULL && strcmp(extensions[i].name, name) == 0) {
+      return &extensions[i];
+    }
+  }
+
+  return NULL;
+}
+
+static js_value_t *
+bare_sqlite_static_extensions_js(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t count = 0;
+  const bare_sqlite_static_extension_t *extensions = bare_sqlite_static_extensions(&count);
+
+  js_value_t *result;
+  err = js_create_array_with_length(env, count, &result);
+  assert(err == 0);
+
+  for (size_t i = 0; i < count; i++) {
+    js_value_t *name;
+    err = js_create_string_utf8(env, (const utf8_t *) extensions[i].name, -1, &name);
+    assert(err == 0);
+
+    err = js_set_element(env, result, (uint32_t) i, name);
+    assert(err == 0);
+  }
+
+  return result;
+}
+
+static js_value_t *
+bare_sqlite_load_static_extension(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 2;
+  js_value_t *argv[2];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 2);
+
+  bare_sqlite_t *db;
+  err = js_get_value_external(env, argv[0], (void **) &db);
+  assert(err == 0);
+
+  size_t name_len;
+  err = js_get_value_string_utf8(env, argv[1], NULL, 0, &name_len);
+  assert(err == 0);
+
+  name_len += 1;
+
+  utf8_t *name = malloc(name_len);
+
+  err = js_get_value_string_utf8(env, argv[1], name, name_len, NULL);
+  assert(err == 0);
+
+  const bare_sqlite_static_extension_t *extension = bare_sqlite__find_static_extension((const char *) name);
+
+  if (extension == NULL) {
+    free(name);
+
+    err = bare_sqlite__throw_error(env, SQLITE_NOTFOUND, "Static extension not found");
+    assert(err == 0);
+
+    return NULL;
+  }
+
+  char *errmsg = NULL;
+  int status = extension->init(db->handle, &errmsg, NULL);
+
+  free(name);
 
   if (status != SQLITE_OK) {
     err = bare_sqlite__throw_error(env, status, errmsg != NULL ? errmsg : sqlite3_errstr(status));
@@ -1263,6 +1356,8 @@ bare_sqlite_exports(js_env_t *env, js_value_t *exports) {
   V("exec", bare_sqlite_exec)
   V("enableLoadExtension", bare_sqlite_enable_load_extension)
   V("loadExtension", bare_sqlite_load_extension)
+  V("staticExtensions", bare_sqlite_static_extensions_js)
+  V("loadStaticExtension", bare_sqlite_load_static_extension)
   V("prepare", bare_sqlite_prepare)
   V("bind", bare_sqlite_bind)
   V("step", bare_sqlite_step)
