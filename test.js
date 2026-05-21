@@ -522,3 +522,54 @@ test('query runs statements and returns requested row shapes', (t) => {
   })
   t.is(db.query('SELECT id FROM t WHERE id = ?', [99], 'get'), null)
 })
+
+test('query binds params and extracts typed values', (t) => {
+  using db = new DatabaseSync(':memory:')
+  db.query('CREATE TABLE t (i INTEGER, f REAL, s TEXT, b BLOB, n TEXT)', [], 'run')
+
+  const blob = new Uint8Array([0, 1, 2, 253, 254, 255])
+  db.query('INSERT INTO t VALUES (?, ?, ?, ?, ?)', [42, 3.25, 'hello', blob, null], 'run')
+
+  const row = db.query('SELECT i, f, s, b, n FROM t', [], 'get')
+  t.is(row.i, 42)
+  t.is(row.f, 3.25)
+  t.is(row.s, 'hello')
+  t.ok(Buffer.isBuffer(row.b))
+  t.alike(row.b, Buffer.from(blob))
+  t.is(row.n, null)
+})
+
+test('query round-trips blobs repeatedly', (t) => {
+  using db = new DatabaseSync(':memory:')
+  db.query('CREATE TABLE t (id INTEGER PRIMARY KEY, b BLOB)', [], 'run')
+
+  const small = Buffer.from([1, 2, 3])
+  const large = Buffer.alloc(64 * 1024)
+  for (let i = 0; i < large.length; i++) large[i] = i % 251
+
+  const blobs = [small, large]
+  for (let i = 0; i < 25; i++) blobs.push(Buffer.from([i, i + 1, i + 2, i + 3]))
+
+  for (const blob of blobs) db.query('INSERT INTO t (b) VALUES (?)', [blob], 'run')
+
+  const rows = db.query('SELECT b FROM t ORDER BY id', [], 'values')
+  t.is(rows.length, blobs.length)
+  for (let i = 0; i < blobs.length; i++) t.alike(rows[i][0], blobs[i])
+})
+
+test('query rejects unsafe or invalid input and remains reusable', (t) => {
+  using db = new DatabaseSync(':memory:')
+  db.query('CREATE TABLE t (name TEXT)', [], 'run')
+
+  const injection = "alice'); DROP TABLE t; --"
+  db.query('INSERT INTO t (name) VALUES (?)', [injection], 'run')
+  t.alike(db.query('SELECT name FROM t', [], 'values'), [[injection]])
+
+  t.exception(() => db.query('SELECT * FROM missing', [], 'all'), /no such table/)
+  t.exception(() => db.query('SELECT ?', [], 'all'), /Bind count mismatch/)
+  t.exception(() => db.query('SELECT ?', [1, 2], 'all'), /Bind count mismatch/)
+  t.exception(() => db.query('SELECT ?', [true], 'all'), /Unsupported query parameter/)
+  t.exception(() => db.query('SELECT 1', [], 'other'), /Query mode/)
+
+  t.alike(db.query('SELECT count(*) AS n FROM t', [], 'get'), { n: 1 })
+})
