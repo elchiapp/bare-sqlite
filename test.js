@@ -1,5 +1,5 @@
 const test = require('brittle')
-const path = require('bare-path')
+const path = require(typeof Bare === 'undefined' ? 'path' : 'bare-path')
 const { DatabaseSync, errors: SQLiteError } = require('.')
 
 test('open and close in-memory database', (t) => {
