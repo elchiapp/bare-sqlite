@@ -76,6 +76,18 @@ Execute one or more SQL statements without returning rows. `sql` may contain mul
 
 Compile `sql` into a prepared statement. The returned `StatementSync` can be reused with different parameter values.
 
+#### `const result = db.query(sql, params[, mode])`
+
+Compile, run, and finalize a statement in one call. `params` must be an array
+of positional values. `mode` is one of:
+
+| Mode       | Result                                     |
+| ---------- | ------------------------------------------ |
+| `'run'`    | `{ changes, lastInsertRowid }`             |
+| `'all'`    | Array of object rows keyed by column name  |
+| `'values'` | Array of array rows in result-column order |
+| `'get'`    | First object row, or `null` when empty     |
+
 #### `db.loadExtension(path[, entryPoint])`
 
 Load an SQLite extension from `path`. `entryPoint` is the C initialization function name; when omitted, SQLite derives it from the filename. Throws if `allowExtension` was not enabled at construction.

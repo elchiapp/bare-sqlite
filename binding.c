@@ -904,6 +904,29 @@ bare_sqlite_columns(js_env_t *env, js_callback_info_t *info) {
 }
 
 static js_value_t *
+bare_sqlite_parameter_count(js_env_t *env, js_callback_info_t *info) {
+  int err;
+
+  size_t argc = 1;
+  js_value_t *argv[1];
+
+  err = js_get_callback_info(env, info, &argc, argv, NULL, NULL);
+  assert(err == 0);
+
+  assert(argc == 1);
+
+  bare_sqlite_statement_t *stmt;
+  err = js_get_value_external(env, argv[0], (void **) &stmt);
+  assert(err == 0);
+
+  js_value_t *result;
+  err = js_create_int32(env, sqlite3_bind_parameter_count(stmt->handle), &result);
+  assert(err == 0);
+
+  return result;
+}
+
+static js_value_t *
 bare_sqlite_allow_bare_named_parameters(js_env_t *env, js_callback_info_t *info) {
   int err;
 
@@ -1247,6 +1270,7 @@ bare_sqlite_exports(js_env_t *env, js_value_t *exports) {
   V("finalize", bare_sqlite_finalize)
   V("expandedSQL", bare_sqlite_expanded_sql)
   V("columns", bare_sqlite_columns)
+  V("parameterCount", bare_sqlite_parameter_count)
   V("allowBareNamedParameters", bare_sqlite_allow_bare_named_parameters)
   V("allowUnknownNamedParameters", bare_sqlite_allow_unknown_named_parameters)
   V("readBigInts", bare_sqlite_read_bigints)

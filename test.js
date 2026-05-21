@@ -497,3 +497,28 @@ test('values wraps blob columns as buffers', (t) => {
   t.ok(Buffer.isBuffer(rows[0][0]))
   t.alike(rows[0][0], Buffer.from(blob))
 })
+
+test('query runs statements and returns requested row shapes', (t) => {
+  using db = new DatabaseSync(':memory:')
+  db.query('CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT)', [], 'run')
+
+  const insert = db.query('INSERT INTO t (name) VALUES (?)', ['alice'], 'run')
+  t.is(insert.changes, 1)
+  t.is(insert.lastInsertRowid, 1)
+
+  db.query('INSERT INTO t (name) VALUES (?)', ['bob'], 'run')
+
+  t.alike(db.query('SELECT id, name FROM t ORDER BY id', [], 'all'), [
+    { id: 1, name: 'alice' },
+    { id: 2, name: 'bob' }
+  ])
+  t.alike(db.query('SELECT id, name FROM t ORDER BY id', [], 'values'), [
+    [1, 'alice'],
+    [2, 'bob']
+  ])
+  t.alike(db.query('SELECT id, name FROM t ORDER BY id', [], 'get'), {
+    id: 1,
+    name: 'alice'
+  })
+  t.is(db.query('SELECT id FROM t WHERE id = ?', [99], 'get'), null)
+})
