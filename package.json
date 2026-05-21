@@ -4,10 +4,15 @@
   "description": "SQLite bindings for Bare",
   "exports": {
     "./package": "./package.json",
-    ".": "./index.js"
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
   },
+  "types": "./index.d.ts",
   "files": [
     "index.js",
+    "index.d.ts",
     "bare-sqlite.h",
     "binding.c",
     "binding.js",
