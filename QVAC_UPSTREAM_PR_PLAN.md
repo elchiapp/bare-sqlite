@@ -16,21 +16,7 @@ into small, reviewable branches.
 
 ## Suggested PR Sequence
 
-### PR 1: Node/NAPI Test Target
-
-Scope:
-
-- Add a Node/NAPI build target using the same C binding source.
-- Keep the Bare module as the primary target.
-- Use `require-addon` only as the Node compatibility loader.
-- Add `test:bare`, `test:node`, and aggregate `test` scripts.
-
-Tests:
-
-- Existing test suite passes under Bare.
-- Existing test suite passes under Node.
-
-### PR 2: Statement Values Mode
+### PR 1: Statement Values Mode
 
 Scope:
 
@@ -45,7 +31,7 @@ Tests:
 - Typed scalar values and BLOBs preserve byte order.
 - Existing object-row tests continue to pass.
 
-### PR 3: One-Shot Query Convenience
+### PR 2: One-Shot Query Convenience
 
 Scope:
 
@@ -68,38 +54,38 @@ Tests:
 - Bad SQL, too few params, too many params, unsupported params, and bad mode
   throw without poisoning the next query.
 
-### PR 4: iOS Simulator Driver Test
+### PR 3: TypeScript Declarations
 
 Scope:
 
-- Add a local `test:ios-simulator` script that installs a Bare iOS simulator
-  runtime, builds the simulator prebuild when needed, runs `test.js` through
-  `xcrun simctl spawn`, and shuts down simulators it booted.
-- Keep physical-device testing out of the upstream unit-test script.
+- Add package-owned declarations for `DatabaseSync`, `StatementSync`, query
+  modes, run results, and SQLite value rows.
+- Keep declarations runtime-neutral: BLOBs are `Uint8Array`, and there are no
+  host-specific global types.
 
 Tests:
 
-- Full package test suite passes on an available iOS simulator.
+- Type declarations are consumed by QVAC's wrapper without local ambient shims.
 
-### PR 5: CI And Prebuild Verification
+### PR 4: Static Extension Hooks
 
 Scope:
 
-- Keep lint and tests in CI.
-- Preserve existing prebuild targets.
-- Ensure iOS device and simulator prebuilds use an explicit deployment target
-  low enough for supported devices. QVAC physical-device smoke found that an
-  addon built with SDK 26.5 as the minimum OS would not load on an iOS 26.4.2
-  device; local validation used a rebuilt iOS arm64 prebuild with min iOS 15.1.
+- Add a small public C header for static extension registries.
+- Add the default empty registry source.
+- Add `DatabaseSync.staticExtensions()` and `db.loadStaticExtension(name)`.
+- Add CMake hooks for package users to provide registry source, registry CMake,
+  and an optional package-owned test extension.
 
-Targets to preserve:
+Tests:
 
-- linux x64/arm64
-- darwin x64/arm64
-- win32 x64/arm64
-- android arm/arm64/ia32/x64
-- ios arm64
-- ios simulator
+- Default builds report a registry array.
+- The test extension build can load and call its linked function.
+
+## Deferred Tooling
+
+Simulator runners and broader prebuild validation should stay out of this core
+API branch. Add them later as tooling-only changes when QVAC needs that gate.
 
 ## Out Of Scope For This Series
 

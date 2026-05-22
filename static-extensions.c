@@ -1,4 +1,4 @@
-#include "bare-sqlite.h"
+#include "bare-sqlite-static-extensions.h"
 
 #if defined(BARE_SQLITE_ENABLE_TEST_STATIC_EXTENSION)
 int

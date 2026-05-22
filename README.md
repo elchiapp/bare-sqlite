@@ -109,6 +109,8 @@ Builds can provide a custom static extension registry with
 `-DBARE_SQLITE_STATIC_EXTENSION_SOURCE=/path/to/static-extensions.c`, or a CMake
 integration script with
 `-DBARE_SQLITE_STATIC_EXTENSION_CMAKE=/path/to/extensions.cmake`.
+Registry sources should include `bare-sqlite-static-extensions.h` for the
+extension typedefs.
 
 #### `db.enableLoadExtension(allow)`
 

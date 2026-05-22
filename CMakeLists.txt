@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 4.0)
 
 find_package(cmake-bare REQUIRED PATHS node_modules/cmake-bare)
 find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
-find_package(cmake-napi REQUIRED PATHS node_modules/cmake-napi)
-find_package(cmake-npm REQUIRED PATHS node_modules/cmake-npm)
 
 project(bare_sqlite C)
 
@@ -94,15 +92,3 @@ endfunction()
 add_bare_module(bare_sqlite)
 
 configure_bare_sqlite_target(${bare_sqlite})
-
-add_napi_module(bare_sqlite_node)
-
-configure_bare_sqlite_target(${bare_sqlite_node})
-
-resolve_node_module(bare-compat-napi compat)
-
-target_include_directories(
-  ${bare_sqlite_node}
-  PRIVATE
-    "${compat}/include"
-)

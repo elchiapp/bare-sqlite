@@ -13,7 +13,7 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "bare-sqlite.h",
+    "bare-sqlite-static-extensions.h",
     "binding.c",
     "binding.js",
     "CMakeLists.txt",
@@ -25,10 +25,7 @@
   "scripts": {
     "format": "prettier --write . && lunte --fix",
     "lint": "prettier --check . && lunte",
-    "test": "npm run test:bare && npm run test:node",
-    "test:bare": "brittle-bare --coverage test.js",
-    "test:ios-simulator": "node scripts/test-ios-simulator.js",
-    "test:node": "brittle-node --coverage test.js"
+    "test": "brittle-bare --coverage test.js"
   },
   "repository": {
     "type": "git",
@@ -40,17 +37,11 @@
     "url": "https://github.com/holepunchto/bare-sqlite/issues"
   },
   "homepage": "https://github.com/holepunchto/bare-sqlite#readme",
-  "dependencies": {
-    "require-addon": "^1.0.2"
-  },
   "devDependencies": {
-    "bare-compat-napi": "^1.0.0",
     "bare-path": "^3.0.0",
     "brittle": "^3.1.1",
     "cmake-bare": "^1.1.6",
     "cmake-fetch": "^1.5.1",
-    "cmake-napi": "^1.0.7",
-    "cmake-npm": "^1.0.2",
     "lunte": "^1.6.0",
     "prettier": "^3.4.2",
     "prettier-config-holepunch": "^2.0.0"

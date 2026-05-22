@@ -1,9 +1,9 @@
-export type SqliteNativeValue = null | number | string | Uint8Array;
+export type SqliteNativeValue = null | number | bigint | string | Uint8Array;
 export type QueryMode = "run" | "all" | "values" | "get";
 
 export type RunResult = {
-  readonly changes: number;
-  readonly lastInsertRowid: number;
+  readonly changes: number | bigint;
+  readonly lastInsertRowid: number | bigint;
 };
 
 export type QueryResult<M extends QueryMode> = M extends "run"
@@ -31,9 +31,9 @@ export class DatabaseSync {
   close(): void;
   exec(sql: string): void;
   prepare(sql: string): StatementSync;
-  query<M extends QueryMode>(
+  query<M extends QueryMode = "all">(
     sql: string,
-    params?: ReadonlyArray<unknown>,
+    params?: ReadonlyArray<SqliteNativeValue | ArrayBuffer>,
     mode?: M,
   ): QueryResult<M>;
   enableLoadExtension(allow: boolean): void;

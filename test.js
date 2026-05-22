@@ -1,5 +1,5 @@
 const test = require('brittle')
-const path = require(typeof Bare === 'undefined' ? 'path' : 'bare-path')
+const path = require('bare-path')
 const { DatabaseSync, errors: SQLiteError } = require('.')
 
 test('open and close in-memory database', (t) => {
@@ -526,6 +526,25 @@ test('values wraps blob columns as buffers', (t) => {
   t.alike(rows[0][0], Buffer.from(blob))
 })
 
+test('values preserves object row behavior for all and get', (t) => {
+  using db = new DatabaseSync(':memory:')
+  db.exec(`
+    CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT);
+    INSERT INTO t (name) VALUES ('alice'), ('bob');
+  `)
+
+  const stmt = db.prepare('SELECT id, name FROM t ORDER BY id')
+  t.alike(stmt.values(), [
+    [1, 'alice'],
+    [2, 'bob']
+  ])
+  t.alike(stmt.all(), [
+    { id: 1, name: 'alice' },
+    { id: 2, name: 'bob' }
+  ])
+  t.alike(stmt.get(), { id: 1, name: 'alice' })
+})
+
 test('query runs statements and returns requested row shapes', (t) => {
   using db = new DatabaseSync(':memory:')
   db.query('CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT)', [], 'run')
@@ -594,8 +613,10 @@ test('query rejects unsafe or invalid input and remains reusable', (t) => {
   t.alike(db.query('SELECT name FROM t', [], 'values'), [[injection]])
 
   t.exception(() => db.query('SELECT * FROM missing', [], 'all'), /no such table/)
+  t.exception(() => db.query('SELECT :name', { name: 'alice' }, 'all'), /Query params must be an array/)
   t.exception(() => db.query('SELECT ?', [], 'all'), /Bind count mismatch/)
   t.exception(() => db.query('SELECT ?', [1, 2], 'all'), /Bind count mismatch/)
+  t.exception(() => db.query('SELECT ?', [undefined], 'all'), /Unsupported query parameter/)
   t.exception(() => db.query('SELECT ?', [true], 'all'), /Unsupported query parameter/)
   t.exception(() => db.query('SELECT 1', [], 'other'), /Query mode/)
 

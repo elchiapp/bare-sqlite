@@ -1,5 +1,5 @@
-#ifndef BARE_SQLITE_H
-#define BARE_SQLITE_H
+#ifndef BARE_SQLITE_STATIC_EXTENSIONS_H
+#define BARE_SQLITE_STATIC_EXTENSIONS_H
 
 #include <stddef.h>
 

@@ -3,7 +3,7 @@
 #include <sqlite3ext.h>
 #include <stddef.h>
 
-#include "../bare-sqlite.h"
+#include "../bare-sqlite-static-extensions.h"
 
 static void
 bare_sqlite_test_value(sqlite3_context *context, int argc, sqlite3_value **argv) {

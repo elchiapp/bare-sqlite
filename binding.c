@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <bare.h>
-#include <bare-sqlite.h>
+#include <bare-sqlite-static-extensions.h>
 #include <js.h>
 #include <sqlite3.h>
 #include <stdbool.h>
